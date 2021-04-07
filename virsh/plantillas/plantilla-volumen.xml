@@ -1,0 +1,12 @@
+<volume type='file'>
+  <name>{{ NOMBRE }}</name>
+  <key>{{ RUTA_COMPLETA }}</key>
+  <source>
+  </source>
+  <allocation>0</allocation>
+  <capacity unit="G">{{ CAPACIDAD }}</capacity>
+  <target>
+    <path>{{ RUTA_COMPLETA }}</path>
+    <format type='{{ TIPO }}'/>
+  </target>
+</volume>

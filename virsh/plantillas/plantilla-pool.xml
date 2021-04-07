@@ -1,0 +1,13 @@
+<pool type='dir'>
+  <name>{{ NOMBRE }}</name>
+  <uuid>{{ ID }}</uuid>
+  <capacity unit='bytes'>0</capacity>
+  <allocation unit='bytes'>0</allocation>
+  <available unit='bytes'>0</available>
+  <source>
+  </source>
+  <target>
+    <path>{{ RUTA }}/virsh/pools/pool1</path>
+  </target>
+</pool>
+
