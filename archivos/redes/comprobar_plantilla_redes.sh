@@ -6,10 +6,10 @@ then
 	cd ..
 	export PATH=$(pwd)
 	echo 'No existe ninguna plantilla llamada plantilla-red.xml'
-	echo "Tienes que crear una plantilla llamada plantilla-red.xml en el directorio $PATH/virsh/plantillas/"
+	echo "Tienes que crear una plantilla de red xml llamada 'plantilla-red.xml' en el directorio $PATH/virsh/plantillas/"
 	echo ' '
 	echo 'Saliendo ...'
 	exit
 else
-	. archivos/crear_redes.sh
+	. archivos/redes/crear_redes.sh
 fi

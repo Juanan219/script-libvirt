@@ -1,5 +1,5 @@
 <network>
-  <name>intra</name>
+  <name>{{ NOMBRE }}</name>
   <uuid>{{ ID }}</uuid>
   <forward mode='nat'>
     <nat>

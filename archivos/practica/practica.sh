@@ -5,7 +5,36 @@
 export ID=$(cat /proc/sys/kernel/random/uuid)
 export RUTA=$(pwd)
 export NOMBRE='pool1'
-
+export COMPROBACION=0
+read -p 'Inserta la ruta del pool por defecto: ' RUTA_POOL
+while [[ -z $RUTA_POOL ]]
+do
+	read -p 'Inserta la ruta del pool por defecto: ' RUTA_POOL
+	COMPROBACION=$(($COMPROBACION + 1))
+	if [[ $COMPROBACION -eq 3 ]]
+	then
+		echo 'Ha fallado 3 veces'
+		echo ' '
+		echo 'Saliendo...'
+		exit 1
+	fi
+done
+	# Comprobación de que el pool por defecto existe
+COMPROBACION=0
+while [[ ! -d $RUTA_POOL ]]
+do
+	echo "No extiste el directorio $RUTA_POOL"
+	echo ' '
+	COMPROBACION=$(($COMPROBACION + 1))
+	if [[ $COMPROBACION -eq 3 ]]
+	then
+		echo 'Ha fallado 3 veces'
+		echo ' '
+		echo 'Saliendo...'
+		exit 1
+	fi
+	read -p 'Inserta la ruta correcta del pool por defecto: ' RUTA_POOL
+done
 	# Modificamos el fichero xml con las variables
 cp virsh/plantillas/plantilla-pool.xml virsh/pools/fichero_xml/pool1.xml
 sed -i "s/{{ ID }}/$ID/g" virsh/pools/fichero_xml/pool1.xml
@@ -47,17 +76,19 @@ cd $RUTA
 # Creamos la red intra
 	# Definimos las variables
 read -p "Nombre de la nueva tarjeta de red: " TARJETA_RED
+export NOMBRE='intra'
 export ID=$(cat /proc/sys/kernel/random/uuid)
 export MAC=$(openssl rand -hex 3 | sed 's/\(..\)\(..\)\(..\)/52:54:00:\1:\2:\3/')
 
 	# Modificamos el fichero xml con las variables
-cp virsh/plantillas/plantilla-red.xml virsh/redes/intra.xml
-sed -i "s/{{ TARJETA_RED }}/$TARJETA_RED/g" virsh/redes/intra.xml
-sed -i "s/{{ ID }}/$ID/g" virsh/redes/intra.xml
-sed -i "s/{{ MAC }}/$MAC/g" virsh/redes/intra.xml
+cp virsh/plantillas/plantilla-red.xml virsh/redes/red-intra.xml
+sed -i "s/{{ NOMBRE }}/$NOMBRE/g" virsh/redes/red-intra.xml
+sed -i "s/{{ TARJETA_RED }}/$TARJETA_RED/g" virsh/redes/red-intra.xml
+sed -i "s/{{ ID }}/$ID/g" virsh/redes/red-intra.xml
+sed -i "s/{{ MAC }}/$MAC/g" virsh/redes/red-intra.xml
 
 	# Creamos la red intra y la activamos
-virsh -c qemu:///system net-define virsh/redes/intra.xml
+virsh -c qemu:///system net-define virsh/redes/red-intra.xml
 virsh -c qemu:///system net-start intra
 
 # Creamos la máquina maquina1
@@ -112,10 +143,22 @@ sed -i "s/{{ TIPO }}/$TIPO/g" virsh/volumenes/vol1.xml
 virsh -c qemu:///system vol-create default virsh/volumenes/vol1.xml
 # Conectamos el vol1 a maquina1
 echo 'Concediendo IP...'
-sleep 15
+export COMPROBACION=0
 export IP1=$(virsh -c qemu:///system net-dhcp-leases intra | grep $MAC1 | grep -o '10.10.20.\{0,9\}\{1,3\}' | cut -d '/' -f 1)
-read -p 'Inserta la ruta del pool por defecto: ' RUTA_POOL
-virsh -c qemu:///system attach-disk maquina1 $RUTA_POOL/vol1 vdb
+while [[ -z $IP1 ]]
+do
+	export IP1=$(virsh -c qemu:///system net-dhcp-leases intra | grep $MAC1 | grep -o '10.10.20.\{0,9\}\{1,3\}' | cut -d '/' -f 1)
+	COMPROBACION=$(($COMPROBACION + 1))
+	if [[ $COMPROBACION -eq 30 ]]
+	then
+		echo 'Han transcurrido 30 segundos.'
+		echo ' '
+		echo 'Saliendo...'
+		exit 1
+	fi
+	sleep 1
+done
+	virsh -c qemu:///system attach-disk maquina1 $RUTA_POOL/vol1 vdb
 # Le damos formato al volumen y creamos el directorio en maquina1 para conectar el vol1
 echo 'Conectando el volumen...'
 sleep 1
@@ -239,8 +282,21 @@ ssh debian@$IP1 sudo systemctl stop postgresql
 ssh debian@$IP1 sudo umount /dev/vdb
 virsh -c qemu:///system detach-disk maquina1 vdb
 echo 'Concediendo IP...'
-sleep 15
+export COMPROBACION=0
 export IP2=$(virsh -c qemu:///system net-dhcp-leases intra | grep $MAC2 | grep -o '10.10.20.\{0,9\}\{1,3\}' | cut -d '/' -f 1)
+while [[ -z $IP2 ]]
+do
+	export IP2=$(virsh -c qemu:///system net-dhcp-leases intra | grep $MAC2 | grep -o '10.10.20.\{0,9\}\{1,3\}' | cut -d '/' -f 1)
+	COMPROBACION=$(($COMPROBACION + 1))
+	if [[ $COMPROBACION -eq 30 ]]
+	then
+		echo 'Han transcurrido 30 segundos.'
+		echo ' '
+		echo 'Saliendo...'
+		exit 1
+	fi
+	sleep 1
+done
 virsh -c qemu:///system attach-disk maquina2 $RUTA_POOL/vol1 vdb
 
 # Creamos el grupo, el directorio y usuario en maquina2
@@ -268,7 +324,23 @@ sudo systemctl stop postgresql
 sudo rm -r /etc/postgresql
 sudo mv etc/postgresql /etc
 sudo chown -R postgres. /etc/postgresql
-sudo systemctl start portgresql
+sudo systemctl start postgresql
 EOF
-
+export COMPROBACION=0
+export ACTIVO=$(ssh debian@$IP2 sudo systemctl status postgresql | grep -o "active (exited)")
+while [[ -z $ACTIVO ]]
+do
+	ssh debian@$IP2 sudo systemctl start postgresql
+	export ACTIVO=$(ssh debian@$IP2 sudo systemctl status postgresql | grep -o "active (exited)")
+	COMPROBACION=$(($COMPROBACION + 1))
+	if [[ $COMPROBACION -eq 30 ]]
+	then
+		echo 'Han pasado 30 segundos y el proceso de postgresql no se ha iniciado'
+		echo ' '
+		echo 'Saliendo...'
+		exit 1
+	fi
+	sleep 1
+done
 echo "La IP de maquina2 es: $IP2"
+exit 0
