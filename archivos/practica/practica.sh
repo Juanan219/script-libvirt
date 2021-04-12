@@ -4,6 +4,14 @@
 	# Definimos las variables necesarias para el pool
 export ID=$(cat /proc/sys/kernel/random/uuid)
 export RUTA=$(pwd)
+if [[ ! -d virsh/pools/pool1 ]]
+then
+        mkdir virsh/pools/pool1
+fi
+if [[ ! -d virsh/pools/fichero_xml ]]
+then
+        mkdir virsh/pools/fichero_xml
+fi
 export NOMBRE='pool1'
 export COMPROBACION=0
 read -p 'Inserta la ruta del pool por defecto: ' RUTA_POOL
