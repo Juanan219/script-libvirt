@@ -1,15 +1,28 @@
 #!/bin/bash
 
 # Comprueba si está creado el árbol de directorios necesario
-
-if [[ ! -d ../virsh ]];
+if [[ ! -d virsh ]];
 then
-	cd ..
-	export PATH=$(pwd)/virsh
-	echo "Creando el árbol de directorios en $PATH"
-	mkdir -p ../virsh/dominios ../virsh/plantillas ../virsh/pools ../virsh/redes ../virsh/volumenes ../virsh/plantillas
+        export PATH=$(pwd)/virsh
+        echo "Creando el árbol de directorios en $PATH"
+        mkdir -p virsh/dominios virsh/plantillas virsh/pools virsh/redes virsh/volumenes
 fi
-
+if [[ ! -d virsh/dominios ]]
+then
+        mkdir virsh/dominios
+fi
+if [[ ! -d virsh/pools ]]
+then
+        mkdir virsh/pools
+fi
+if [[ ! -d virsh/redes ]]
+then
+        mkdir virsh/redes
+fi
+if [[ ! -d virsh/volumenes ]]
+then
+        mkdir virsh/volumenes
+fi
 # Abre el Menú principal
 echo '+-------------------+'
 echo '|    Menú virsh     |'
